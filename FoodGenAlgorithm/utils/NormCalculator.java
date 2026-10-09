@@ -29,7 +29,7 @@ public final class NormCalculator {
      *      SexType sType - Male or Female
      *      BigDecimal actFactor - an activity factor
      * Returns:
-     *      BigDecimal - Daily norm of calories
+     *      BigDecimal daily norm of calories
      */
     public static BigDecimal getCaloriesNorm(BigDecimal weight, BigDecimal height, int age, SexType sex, BigDecimal actFactor) {
         // Mifflin formula
@@ -43,21 +43,39 @@ public final class NormCalculator {
                 .multiply(actFactor);
     }
 
-    /* Get a protein norm in g. 15% of provided calories. */
+    /**
+     *  Get a protein norm in g. {@link #PROTEIN_SHARE} of provided calories.
+     *  Params:
+     *      BigDecimal calories - calories to calculate amount of protein from
+     *  Returns:
+     *      BigDecimal norm of protein in g
+     */
     public static BigDecimal getProteinNorm(BigDecimal calories) {
         return calories.multiply(PROTEIN_SHARE)
-                .divide(CALORIES_PER_G_PROTEIN, 2, RoundingMode.HALF_UP);
+                       .divide(CALORIES_PER_G_PROTEIN, 2, RoundingMode.HALF_UP);
     }
 
-    /* Get a fat norm in g. 30% of provided calories. */
+    /**
+     *  Get a fat norm in g. {@link #FAT_SHARE} of provided calories.
+     *  Params:
+     *      BigDecimal calories - calories to calculate amount of fat from
+     *  Returns:
+     *      BigDecimal norm of fat in g
+     */
     public static BigDecimal getFatNorm(BigDecimal calories) {
         return calories.multiply(FAT_SHARE)
-                .divide(CALORIES_PER_G_FAT, 2, RoundingMode.HALF_UP);
+                       .divide(CALORIES_PER_G_FAT, 2, RoundingMode.HALF_UP);
     }
 
-    /* Get a carbohydrates norm. 55% of provided calories */
+    /**
+     *  Get a carbs norm in g. {@link #CARBS_SHARE} of provided calories.
+     *  Params:
+     *      BigDecimal calories - calories to calculate amount of carbs from
+     *  Returns:
+     *      BigDecimal norm of carbs in g
+     */
     public static BigDecimal getCarbsNorm(BigDecimal calories) {
         return calories.multiply(CARBS_SHARE)
-                .divide(CALORIES_PER_G_CARBS, 2, RoundingMode.HALF_UP);
+                       .divide(CALORIES_PER_G_CARBS, 2, RoundingMode.HALF_UP);
     }
 }
