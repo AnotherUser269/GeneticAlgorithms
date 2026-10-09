@@ -5,7 +5,6 @@ import utils.NormCalculator;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
-import java.util.List;
 
 public class App {
     // Constants
@@ -48,7 +47,7 @@ public class App {
                 .setData(food)
                 .build();
 
-        List<BigDecimal> best = genAlgorithm.startSimulation();
+        int[] best = genAlgorithm.startSimulation();
 
         // Outputting the result
         int counter = 0;
@@ -59,21 +58,21 @@ public class App {
         BigDecimal currCarbs = BigDecimal.ZERO;
 
         System.out.println("(i) The algorithm decided to choose:");
-        for(int i=0; i< best.size(); i++) {
-            if (best.get(i).compareTo(BigDecimal.ZERO) != 0) {
+        for(int i=0; i< best.length; i++) {
+            if (best[i] != 0) {
                 counter++;
 
                 Food curFood = food.get(i);
-                BigDecimal curAmount = best.get(i);
+                int curAmount = best[i];
 
                 System.out.printf("%d. %s - %s g%n",
-                        counter, curFood.label(), curAmount.multiply(BigDecimal.valueOf(100))
+                        counter, curFood.label(), curAmount * 100
                 );
 
-                currCcal = currCcal.add(curAmount.multiply(curFood.ccal()));
-                currFat = currFat.add(curAmount.multiply(curFood.fat()));
-                currProtein = currProtein.add(curAmount.multiply(curFood.protein()));
-                currCarbs = currCarbs.add(curAmount.multiply(curFood.carbs()));
+                currCcal = currCcal.add(curFood.kcal().multiply(BigDecimal.valueOf(curAmount)));
+                currFat = currFat.add(curFood.fat().multiply(BigDecimal.valueOf(curAmount)));
+                currProtein = currProtein.add(curFood.protein().multiply(BigDecimal.valueOf(curAmount)));
+                currCarbs = currCarbs.add(curFood.carbs().multiply(BigDecimal.valueOf(curAmount)));
             }
         }
         System.out.println("~".repeat(30));

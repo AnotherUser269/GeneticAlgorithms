@@ -62,7 +62,7 @@ public class GenAlgorithm {
 
         public Builder setPopulation(int population) {
             // 0 or fewer species
-            if(BigDecimal.valueOf(population).compareTo(BigDecimal.ZERO) <= 0) {
+            if(population <= 0) {
                 System.err.println("[Error] Wrong population value provided. Expected an integer above zero. Using default value.");
                 return this;
             }
@@ -176,9 +176,9 @@ public class GenAlgorithm {
      * 1. Reproduction
      * 2. Mutation
      * 3. Selection
-     * @return ArrayList<BigDecimal> - the best species as a result of the whole simulation.
+     * @return int[] - the best species as a result of the whole simulation.
      */
-    public List<BigDecimal> startSimulation() {
+    public int[] startSimulation() {
         ArrayList<Species> population = this.initializePopulation();
 
         for (int i=0; i<iterations; i++) {
@@ -203,18 +203,13 @@ public class GenAlgorithm {
         ArrayList<Species> population = new ArrayList<>();
 
         for(int i=0; i<populationSize; i++) {
-            ArrayList<BigDecimal> chromosome = new ArrayList<>();
-
-            // Filling with zeros
-            for(int j=0; j<data.size(); j++) {
-                chromosome.add(BigDecimal.ZERO);
-            }
+            int[] chromosome = new int[data.size()];
 
             // Generating valid not punished species
             for(int j=0; j<distinctProductRestriction; j++) {
                 int ind = rng.nextInt(data.size());
                 // Collisions are allowed on purpose
-                chromosome.set(ind, BigDecimal.valueOf(rng.nextInt(genValueRestriction + 1)));
+                chromosome[ind] = rng.nextInt(genValueRestriction + 1);
             }
 
             population.add(new Species(chromosome));
@@ -231,7 +226,7 @@ public class GenAlgorithm {
     private void mutation(ArrayList<Species> children) {
         for(Species sp: children) {
             if (rng.nextDouble() < mutationRate) {
-                BigDecimal newValue = BigDecimal.valueOf(rng.nextInt(genValueRestriction + 1));
+                int newValue = rng.nextInt(genValueRestriction + 1);
                 int ind = rng.nextInt(data.size());
 
                 sp.setGenAt(ind, newValue);
@@ -268,18 +263,18 @@ public class GenAlgorithm {
      * Get a child of two parents.
      * @param parentA - first parent
      * @param parentB - second parent
-     * @return ArrayList<BigDecimal> - their child
+     * @return int[] - their child
      */
-    private ArrayList<BigDecimal> crossover(Species parentA, Species parentB) {
+    private int[] crossover(Species parentA, Species parentB) {
         int crInd = rng.nextInt(data.size()-1) + 1;  // crosspoint > 0
-        ArrayList<BigDecimal> newSpecies = new ArrayList<>();
+        int[] newSpecies = new int[data.size()];
 
-        for(int i=0;i<=crInd;i++) {
-            newSpecies.add(parentA.getGenAt(i));
+        for(int i = 0; i <= crInd; i++) {
+            newSpecies[i] = parentA.getGenAt(i);
         }
 
-        for(int i=crInd+1;i<data.size();i++) {
-            newSpecies.add(parentB.getGenAt(i));
+        for(int i = crInd + 1; i < data.size(); i++) {
+            newSpecies[i] = parentB.getGenAt(i);
         }
 
         return newSpecies;
@@ -322,18 +317,18 @@ public class GenAlgorithm {
         BigDecimal protein = BigDecimal.ZERO;
         BigDecimal carbs = BigDecimal.ZERO;
 
-        List<BigDecimal> chromosome = sp.getChromosome();
+        int[] chromosome = sp.getChromosome();
 
         for (int i = 0; i<data.size(); i++) {
-            BigDecimal amount = chromosome.get(i);
-            if (amount.signum() == 0) continue;
+            int amount = chromosome[i];
+            if (amount == 0) continue;
 
             Food currFood = data.get(i);
 
-            ccal = ccal.add(currFood.ccal().multiply(amount));
-            fat = fat.add(currFood.fat().multiply(amount));
-            protein = protein.add(currFood.protein().multiply(amount));
-            carbs = carbs.add(currFood.carbs().multiply(amount));
+            ccal = ccal.add(currFood.kcal().multiply(BigDecimal.valueOf(amount)));
+            fat = fat.add(currFood.fat().multiply(BigDecimal.valueOf(amount)));
+            protein = protein.add(currFood.protein().multiply(BigDecimal.valueOf(amount)));
+            carbs = carbs.add(currFood.carbs().multiply(BigDecimal.valueOf(amount)));
         }
 
         // Calculating the fitness
@@ -357,12 +352,12 @@ public class GenAlgorithm {
      * @param chr - chromosome of a species
      * @return BigDecimal - Penalty value * factor
      */
-    private BigDecimal getPenalty(List<BigDecimal> chr) {
+    private BigDecimal getPenalty(int[] chr) {
         // Counting taken food
         int counter = 0;
 
-        for (BigDecimal gen: chr) {
-            if(gen.compareTo(BigDecimal.ZERO) != 0) counter++;
+        for (int gen: chr) {
+            if(gen != 0) counter++;
         }
 
         if(counter < distinctProductRestriction) {

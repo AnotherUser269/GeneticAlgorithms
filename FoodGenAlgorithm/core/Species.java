@@ -1,29 +1,21 @@
 package core;
 
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
 /**
- * A basic class, representing a single species.
+ * A single species: one integer amount per food in the problem's food list.
  * <p>
- * A chromosome is an arraylist, where chromosome[i] is
- * the answer to the question:
- * "How many times should you take a data[i] food from the GenAlgorithm class,
- * in order to follow the norms as much as possible?"
+ * {@code chromosome[i]} is how many 100g portions of the ith food this
+ * species chose. The fitness field is set by GenAlgorithm
+ * and reflects how close the diet is to the norms. The lower, the better.
  */
 public class Species {
-    private final ArrayList<BigDecimal> chromosome;
+    private final int[] chromosome;
     public double fitness;
 
-    public Species(ArrayList<BigDecimal> chr) {
-        this.chromosome = new ArrayList<>(chr);
-    }
+    public Species(int[] chr) { this.chromosome = chr.clone(); }
 
-    public BigDecimal getGenAt(int ind) { return chromosome.get(ind); }
+    public int getGenAt(int ind) { return chromosome[ind]; }
 
-    public void setGenAt(int ind, BigDecimal newVal) { chromosome.set(ind, newVal); }
+    public void setGenAt(int ind, int newVal) { chromosome[ind] = newVal; }
 
-    public List<BigDecimal> getChromosome() { return Collections.unmodifiableList(chromosome); }
+    public int[] getChromosome() { return chromosome; }
 }
