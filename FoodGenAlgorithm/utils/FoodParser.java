@@ -13,20 +13,20 @@ public final class FoodParser {
 
     /**
      * Reads a file where each non-blank line has the format:
-     *   [label words...] [ccal] [fat] [protein] [carbs]
-     * All numeric values are per one pack/portion (see Food).
+     *   [label words...] [kcal] [fat] [protein] [carbs]
+     * Numeric values are per 100g of the food.
      *
-     * @param file_path path to the input file
+     * @param filePath path to the input file
      * @return list of parsed Food entries
      */
-    public static ArrayList<Food> getFromTxt(String file_path) {
+    public static ArrayList<Food> getFromTxt(String filePath) {
         ArrayList<Food> food = new ArrayList<>();
 
-        File file = new File(file_path);
+        File file = new File(filePath);
         try (Scanner sc = new Scanner(file)) {
             while (sc.hasNextLine()) {
                 String line = sc.nextLine();
-                if (line.isEmpty()) continue;
+                if (line.isBlank()) continue;
 
                 String[] data = line.trim().split("\\s+");
                 Food newFood = getFood(data);
@@ -34,8 +34,7 @@ public final class FoodParser {
                 food.add(newFood);
             }
         } catch (FileNotFoundException e) {
-            System.err.println("File not found.");
-            System.exit(1);
+            throw new RuntimeException("File not found: " + filePath, e);
         }
 
         return food;
@@ -44,10 +43,16 @@ public final class FoodParser {
     /**
      * Returns a food record object based on a split line parts.
      *
-     * @param data - an array of split line parts
-     * @return Food - record
+     * @param data an array of split line parts
+     * @return Food record
      */
     private static Food getFood(String[] data) {
+        if (data.length < 5) {
+            throw new IllegalArgumentException(
+                    "Bad line (need label + 4 numbers): " + String.join(" ", data)
+            );
+        }
+
         // Building label
         StringBuilder label = new StringBuilder(data[0]);
         for(int i = 1; i< data.length-4; i++) {
@@ -55,17 +60,12 @@ public final class FoodParser {
             label.append(data[i]);
         }
 
-        // Ccal fat protein carbs
-        if (data.length < 5) {
-            throw new IllegalArgumentException(
-                    "Bad line (need label + 4 numbers): " + String.join(" ", data));
-        }
-
-        BigDecimal ccal      = new BigDecimal(data[data.length-4]);
+        // Kcal fat protein carbs
+        BigDecimal kcal      = new BigDecimal(data[data.length-4]);
         BigDecimal fat       = new BigDecimal(data[data.length-3]);
         BigDecimal protein   = new BigDecimal(data[data.length-2]);
         BigDecimal carbs     = new BigDecimal(data[data.length-1]);
 
-        return new Food(label.toString(), ccal, fat, protein, carbs);
+        return new Food(label.toString(), kcal, fat, protein, carbs);
     }
 }
