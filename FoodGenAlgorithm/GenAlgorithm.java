@@ -5,64 +5,88 @@ import java.math.BigDecimal;
 import java.util.*;
 
 public class GenAlgorithm {
+    private static final int DEFAULT_ACTIVE_GENES = 10;
     private final Random rng = new Random();
 
     // Algorithm settings
     private final int populationSize;
     private final int iterations;
     private final double mutationRate;
-    private final int distinctProductRestriction;
-    private final int genValueRestriction;
-    private final BigDecimal ccalNorm;
+    private final int maxDistinctFoods;
+    private final int minDistinctFoods;
+    private final int maxPortionsPerFood;
+    private final BigDecimal kcalNorm;
     private final BigDecimal fatNorm;
     private final BigDecimal proteinNorm;
     private final BigDecimal carbsNorm;
-    private final int ccalFactor;
+    private final int kcalFactor;
     private final int fatFactor;
     private final int proteinFactor;
     private final int carbsFactor;
     private final int penaltyFactor;
-    private final ArrayList<Food> data;
+    private final ArrayList<Food> foods;
+
+    private final double[] foodKcal;
+    private final double[] foodFat;
+    private final double[] foodProtein;
+    private final double[] foodCarbs;
 
     private GenAlgorithm(Builder builder) {
         this.populationSize = builder.populationSize;
         this.iterations = builder.iterations;
         this.mutationRate = builder.mutationRate;
-        this.distinctProductRestriction = builder.distinctProductRestriction;
-        this.genValueRestriction = builder.genValueRestriction;
-        this.ccalNorm = builder.ccalNorm;
+        this.maxDistinctFoods = builder.maxDistinctFoods;
+        this.minDistinctFoods = builder.minDistinctFoods;
+        this.maxPortionsPerFood = builder.maxPortionsPerFood;
+        this.kcalNorm = builder.kcalNorm;
         this.fatNorm = builder.fatNorm;
         this.proteinNorm = builder.proteinNorm;
         this.carbsNorm = builder.carbsNorm;
-        this.ccalFactor = builder.ccalFactor;
+        this.kcalFactor = builder.kcalFactor;
         this.fatFactor = builder.fatFactor;
         this.proteinFactor = builder.proteinFactor;
         this.carbsFactor = builder.carbsFactor;
         this.penaltyFactor = builder.penaltyFactor;
 
-        this.data = builder.data;
+        this.foods = builder.foods;
+
+        // Performance improvement
+        int n = builder.foods.size();
+        this.foodKcal    = new double[n];
+        this.foodFat     = new double[n];
+        this.foodProtein = new double[n];
+        this.foodCarbs   = new double[n];
+
+        for (int i = 0; i < n; i++) {
+            Food f = builder.foods.get(i);
+            foodKcal[i]    = f.kcal().doubleValue();
+            foodFat[i]     = f.fat().doubleValue();
+            foodProtein[i] = f.protein().doubleValue();
+            foodCarbs[i]   = f.carbs().doubleValue();
+        }
     }
 
     public static class Builder {
         private int populationSize = 100;
         private int iterations = 1000;
         private double mutationRate = 0.3;
-        private int distinctProductRestriction = 5;
-        private int genValueRestriction = 6;
-        private BigDecimal ccalNorm;
+        private int maxDistinctFoods = 10;
+        private int minDistinctFoods = 5;
+        private int maxPortionsPerFood = 6;
+        private BigDecimal kcalNorm;
         private BigDecimal fatNorm;
         private BigDecimal proteinNorm;
         private BigDecimal carbsNorm;
-        private int ccalFactor = 1;
+        private int kcalFactor = 1;
         private int fatFactor = 1;
         private int proteinFactor = 1;
         private int carbsFactor = 1;
         private int penaltyFactor = 10_000;
-        private ArrayList<Food> data;
+        private ArrayList<Food> foods;
 
         public Builder setPopulation(int population) {
             // 0 or fewer species
-            if(population <= 0) {
+            if (population <= 0) {
                 System.err.println("[Error] Wrong population value provided. Expected an integer above zero. Using default value.");
                 return this;
             }
@@ -73,7 +97,7 @@ public class GenAlgorithm {
 
         public Builder setIterations(int iterations) {
             // <= 0 iterations
-            if(iterations <= 0) {
+            if (iterations <= 0) {
                 System.err.println("[Error] Wrong iterations value provided. Expected an integer above zero. Using default value.");
                 return this;
             }
@@ -84,7 +108,7 @@ public class GenAlgorithm {
 
         public Builder setMutationRate(double mutationRate) {
             // < 0% mutation
-            if(mutationRate < 0) {
+            if (mutationRate < 0) {
                 System.err.println("[Error] Wrong mutation rate provided. Expected a double above or equal to zero. Using default value.");
                 return this;
             }
@@ -93,52 +117,63 @@ public class GenAlgorithm {
             return this;
         }
 
-        public Builder setProductAmountRestriction(int restriction) {
+        public Builder setMaxDistinctFoods(int restriction) {
             // 0 or fewer products to take
-            if(restriction <= 0) {
-                System.err.println("[Error] Wrong restriction value for food provided. Expected an integer above zero. Using default value.");
+            if (restriction <= 0 && restriction != -1) {
+                System.err.println("[Error] Wrong restriction value for food provided. Expected an integer above zero or -1. Using no max restriction.");
                 return this;
             }
 
-            this.distinctProductRestriction = restriction;
+            this.maxDistinctFoods = restriction;
             return this;
         }
 
-        public Builder setGenValueRestriction(int restriction) {
+        public Builder setMinDistinctFoods(int restriction) {
+            // 0 or fewer products to take
+            if (restriction <= 0 && restriction != -1) {
+                System.err.println("[Error] Wrong restriction value for food provided. Expected an integer above zero or -1. Using no min restriction.");
+                return this;
+            }
+
+            this.minDistinctFoods = restriction;
+            return this;
+        }
+
+        public Builder setMaxPortionsPerFood(int restriction) {
             // 0 or fewer for each gen
-            if(restriction <= 0) {
+            if (restriction <= 0) {
                 System.err.println("[Error] Wrong restriction value for gen provided. Expected an integer above zero. Using default value.");
                 return this;
             }
 
-            this.genValueRestriction = restriction;
+            this.maxPortionsPerFood = restriction;
             return this;
         }
 
-        public Builder setNorms(BigDecimal ccal, BigDecimal fat, BigDecimal protein, BigDecimal carbs) {
-            // < 0 ccal
-            if(ccal.compareTo(BigDecimal.ZERO) < 0) {
-                System.err.println("[Error] Wrong ccal norm provided. Expected a BigDecimal above or equal to zero. Using default value.");
+        public Builder setNorms(BigDecimal kcal, BigDecimal fat, BigDecimal protein, BigDecimal carbs) {
+            // < 0 kcal
+            if (kcal.compareTo(BigDecimal.ZERO) < 0) {
+                System.err.println("[Error] Wrong kcal norm provided. Expected a BigDecimal above or equal to zero. Using default value.");
             } else {
-                this.ccalNorm = ccal;
+                this.kcalNorm = kcal;
             }
 
             // < 0 fat
-            if(fat.compareTo(BigDecimal.ZERO) < 0) {
+            if (fat.compareTo(BigDecimal.ZERO) < 0) {
                 System.err.println("[Error] Wrong fat norm provided. Expected a BigDecimal above or equal to zero. Using default value.");
             } else {
                 this.fatNorm = fat;
             }
 
             // < 0 protein
-            if(protein.compareTo(BigDecimal.ZERO) < 0) {
+            if (protein.compareTo(BigDecimal.ZERO) < 0) {
                 System.err.println("[Error] Wrong protein norm provided. Expected a BigDecimal above or equal to zero. Using default value.");
             } else {
                 this.proteinNorm = protein;
             }
 
             // < 0 carbs
-            if(carbs.compareTo(BigDecimal.ZERO) < 0) {
+            if (carbs.compareTo(BigDecimal.ZERO) < 0) {
                 System.err.println("[Error] Wrong carbs norm provided. Expected a BigDecimal above or equal to zero. Using default value.");
             } else {
                 this.carbsNorm = carbs;
@@ -147,8 +182,8 @@ public class GenAlgorithm {
             return this;
         }
 
-        public Builder setFactors(int ccalFactor, int fatFactor, int proteinFactor, int carbsFactor) {
-            this.ccalFactor = ccalFactor;
+        public Builder setFactors(int kcalFactor, int fatFactor, int proteinFactor, int carbsFactor) {
+            this.kcalFactor = kcalFactor;
             this.fatFactor = fatFactor;
             this.proteinFactor = proteinFactor;
             this.carbsFactor = carbsFactor;
@@ -160,8 +195,8 @@ public class GenAlgorithm {
             return this;
         }
 
-        public Builder setData(ArrayList<Food> data) {
-            this.data = data;
+        public Builder setData(ArrayList<Food> foods) {
+            this.foods = foods;
             return this;
         }
 
@@ -171,20 +206,25 @@ public class GenAlgorithm {
     }
 
     /**
-     * Makes {@link #iterations} steps of simulation.
+     * Runs the algorithm for {@link #iterations} generations and returns the
+     * chromosome of the best species found.
+     * <p>
      * A one step could be described as:
      * 1. Reproduction
      * 2. Mutation
      * 3. Selection
-     * @return int[] - the best species as a result of the whole simulation.
+     *
+     * @return the chromosome of the best species found
      */
     public int[] startSimulation() {
         ArrayList<Species> population = this.initializePopulation();
 
-        for (int i=0; i<iterations; i++) {
+        for (int i = 0; i < iterations; i++) {
             // Adding children species to the population
             ArrayList<Species> children = this.reproduce(population);
-            this.mutation(children);
+            this.mutate(children);
+
+            this.updateFitness(children);
             population.addAll(children);
 
             // After that, we are choosing only populationSize best
@@ -195,49 +235,59 @@ public class GenAlgorithm {
     }
 
     /**
-     * Initializes a population of {@link #populationSize} species
-     * with random chromosomes that would not trigger penalty.
-     * @return ArrayList<Species> - a population
+     * Creates the initial population. Each chromosome is generated with at most
+     * {@code maxDistinctFoods} active foods to reduce
+     *
+     * @return the initial population
      */
     private ArrayList<Species> initializePopulation() {
         ArrayList<Species> population = new ArrayList<>();
 
-        for(int i=0; i<populationSize; i++) {
-            int[] chromosome = new int[data.size()];
+        for (int i = 0; i < populationSize; i++) {
+            int[] chromosome = new int[foods.size()];
 
             // Generating valid not punished species
-            for(int j=0; j<distinctProductRestriction; j++) {
-                int ind = rng.nextInt(data.size());
+            int activeGenes = (maxDistinctFoods == -1)
+                    ? Math.min(DEFAULT_ACTIVE_GENES, foods.size())
+                    : Math.min(maxDistinctFoods, foods.size());
+            for (int j = 0; j < activeGenes; j++) {
+                int ind = rng.nextInt(foods.size());
                 // Collisions are allowed on purpose
-                chromosome[ind] = rng.nextInt(genValueRestriction + 1);
+                chromosome[ind] = rng.nextInt(maxPortionsPerFood + 1);
             }
 
             population.add(new Species(chromosome));
         }
 
+        this.updateFitness(population);
+
         return population;
     }
 
     /**
-     * Chooses for every child species if it should mutate or not.
-     * Every species mutates with {@link #mutationRate} rate.
-     * @param children - a link to the ArrayList of children
+     * Mutates each child independently with probability {@link #mutationRate}.
+     * A mutation replaces one randomly chosen gene with a new value in
+     * {@code [0, maxPortionsPerFood]}.
+     *
+     * @param children the offspring to potentially mutate
      */
-    private void mutation(ArrayList<Species> children) {
-        for(Species sp: children) {
+    private void mutate(ArrayList<Species> children) {
+        for (Species sp : children) {
             if (rng.nextDouble() < mutationRate) {
-                int newValue = rng.nextInt(genValueRestriction + 1);
-                int ind = rng.nextInt(data.size());
-
-                sp.setGenAt(ind, newValue);
+                sp.setGenAt(
+                        rng.nextInt(foods.size()),
+                        rng.nextInt(maxPortionsPerFood + 1)
+                );
             }
         }
     }
 
     /**
-     * Pairs up individuals and produces offspring via crossover.
-     * @param population - a link to the ArrayList of population.
-     * @return ArrayList<Species> - children
+     * Creates {@code populationSize / 2} offspring by selecting two
+     * distinct parents randomly and combining them via {@link #crossover}.
+     *
+     * @param population the current generation
+     * @return the offspring
      */
     private ArrayList<Species> reproduce(ArrayList<Species> population) {
         Species parentA;
@@ -246,7 +296,7 @@ public class GenAlgorithm {
 
         if (populationSize < 2) return children;
 
-        for(int i=0; i<populationSize/2; i++) {
+        for (int i = 0; i < populationSize / 2; i++) {
             parentA = population.get(rng.nextInt(populationSize));
             do {
                 parentB = population.get(rng.nextInt(populationSize));
@@ -260,29 +310,33 @@ public class GenAlgorithm {
     }
 
     /**
-     * Get a child of two parents.
-     * @param parentA - first parent
-     * @param parentB - second parent
-     * @return int[] - their child
+     * Produces a child chromosome by single-point crossover.
+     *
+     * @param parentA the first parent
+     * @param parentB the second parent
+     * @return their child
      */
     private int[] crossover(Species parentA, Species parentB) {
-        int crInd = rng.nextInt(data.size()-1) + 1;  // crosspoint > 0
-        int[] newSpecies = new int[data.size()];
+        if (foods.size() < 2) return new int[foods.size()];
 
-        for(int i = 0; i <= crInd; i++) {
-            newSpecies[i] = parentA.getGenAt(i);
+        int crossoverPoint = rng.nextInt(foods.size() - 1) + 1;  // crosspoint > 0
+        int[] childChromosome = new int[foods.size()];
+
+        for (int i = 0; i <= crossoverPoint; i++) {
+            childChromosome[i] = parentA.getGenAt(i);
         }
 
-        for(int i = crInd + 1; i < data.size(); i++) {
-            newSpecies[i] = parentB.getGenAt(i);
+        for (int i = crossoverPoint + 1; i < foods.size(); i++) {
+            childChromosome[i] = parentB.getGenAt(i);
         }
 
-        return newSpecies;
+        return childChromosome;
     }
 
     /**
-     * Updates fitness fields for every species across pool
-     * @param pool - Pool to update fitness in
+     * Updates {@link Species#fitness} for every species in the pool.
+     *
+     * @param pool to update fitness in
      */
     private void updateFitness(ArrayList<Species> pool) {
         for (Species sp : pool) {
@@ -291,82 +345,83 @@ public class GenAlgorithm {
     }
 
     /**
-     * Selects n species from a pool with the lowest fitness func value.
-     * @param pool - Pool to get species from
-     * @param n - how much species we take
-     * @return ArrayList<Species> - a list of best species
+     * Returns the {@code n} species with the lowest fitness values.
+     *
+     * @param pool the species to choose from
+     * @param n    how many species to take
+     * @return the {@code n} best species
      */
     private ArrayList<Species> selectNBest(ArrayList<Species> pool, int n) {
-        this.updateFitness(pool);
-
         pool.sort(Comparator.comparingDouble(a -> a.fitness));
         return new ArrayList<>(pool.subList(0, n));
     }
 
     /**
-     * Evaluate a fitness formula for a species. The formula is:
-     * f(chr) = ccalFactor*|ccalNorm-ccalCurr|^2 + fatFactor*|fatNorm-fatCurr|^2 +
-     * + proteinFactor*|proteinNorm-proteinCurr|^2 + carbsFactor*|carbsNorm-carbsCurr|^2 + penalty
-     * @param sp - chosen species
-     * @return double - fitness func value for a sp species
+     * Computes the fitness of a species. The formula is:
+     * <p>
+     *  f(sp) = kcalFactor     * (kcalNorm    - kcal(sp))^2
+     *         + fatFactor     * (fatNorm     - fat(sp))^2
+     *         + proteinFactor * (proteinNorm - protein(sp))^2
+     *         + carbsFactor   * (carbsNorm   - carbs(sp))^2
+     *         + penalty(sp)
+     *
+     * @param sp the species to evaluate
+     * @return the fitness value
      */
     private double evaluate(Species sp) {
-        // Getting total ccal, fat, protein, carbs of a species
-        BigDecimal ccal = BigDecimal.ZERO;
-        BigDecimal fat = BigDecimal.ZERO;
-        BigDecimal protein = BigDecimal.ZERO;
-        BigDecimal carbs = BigDecimal.ZERO;
+        // Getting total kcal, fat, protein, carbs of a species
+        double kcal = 0.0;
+        double fat = 0.0;
+        double protein = 0.0;
+        double carbs = 0.0;
 
         int[] chromosome = sp.getChromosome();
 
-        for (int i = 0; i<data.size(); i++) {
+        for (int i = 0; i < foods.size(); i++) {
             int amount = chromosome[i];
             if (amount == 0) continue;
 
-            Food currFood = data.get(i);
-
-            ccal = ccal.add(currFood.kcal().multiply(BigDecimal.valueOf(amount)));
-            fat = fat.add(currFood.fat().multiply(BigDecimal.valueOf(amount)));
-            protein = protein.add(currFood.protein().multiply(BigDecimal.valueOf(amount)));
-            carbs = carbs.add(currFood.carbs().multiply(BigDecimal.valueOf(amount)));
+            kcal    += this.foodKcal[i]    * amount;
+            fat     += this.foodFat[i]     * amount;
+            protein += this.foodProtein[i] * amount;
+            carbs   += this.foodCarbs[i]   * amount;
         }
 
         // Calculating the fitness
-        BigDecimal penalty = getPenalty(chromosome);
+        double penalty = getPenalty(chromosome);
 
-        BigDecimal dCcal    = ccalNorm.subtract(ccal).pow(2);
-        BigDecimal dFat     = fatNorm.subtract(fat).pow(2);
-        BigDecimal dProtein = proteinNorm.subtract(protein).pow(2);
-        BigDecimal dCarbs   = carbsNorm.subtract(carbs).pow(2);
+        double dKcal = Math.pow(kcalNorm.doubleValue() - kcal, 2);
+        double dFat = Math.pow(fatNorm.doubleValue() - fat, 2);
+        double dProtein = Math.pow(proteinNorm.doubleValue() - protein, 2);
+        double dCarbs = Math.pow(carbsNorm.doubleValue() - carbs, 2);
 
-        BigDecimal err = dCcal.multiply(BigDecimal.valueOf(ccalFactor))
-                .add(dFat.multiply(BigDecimal.valueOf(fatFactor)))
-                .add(dProtein.multiply(BigDecimal.valueOf(proteinFactor)))
-                .add(dCarbs.multiply(BigDecimal.valueOf(carbsFactor)));
+        double err = dKcal * kcalFactor + dFat * fatFactor + dProtein * proteinFactor + dCarbs * carbsFactor;
 
-        return err.add(penalty).doubleValue();
+        return err + penalty;
     }
 
     /**
-     * Calculates a total penalty for choosing a lot of distinct food.
-     * @param chr - chromosome of a species
-     * @return BigDecimal - Penalty value * factor
+     * Computes the penalty for violating the min/max distinct-food constraints.
+     * Returns zero if the count is within bounds, or if both constraints are
+     * disabled ({@code -1}).
+     *
+     * @param chromosome the chromosome to inspect
+     * @return the total penalty value
      */
-    private BigDecimal getPenalty(int[] chr) {
-        // Counting taken food
-        int counter = 0;
+    private double getPenalty(int[] chromosome) {
+        if (maxDistinctFoods == -1 && minDistinctFoods == -1) return 0;
 
-        for (int gen: chr) {
-            if(gen != 0) counter++;
+        int distinctCount = 0;
+        for (int gen : chromosome) if (gen != 0) distinctCount++;
+
+        double penalty = 0;
+
+        if (maxDistinctFoods != -1 && distinctCount > maxDistinctFoods) {
+            penalty += (distinctCount - maxDistinctFoods) * penaltyFactor;
         }
-
-        if(counter < distinctProductRestriction) {
-            // The rule was not broken - no penalty
-            return BigDecimal.ZERO;
+        if (minDistinctFoods != -1 && distinctCount < minDistinctFoods) {
+            penalty += (minDistinctFoods - distinctCount) * penaltyFactor;
         }
-
-        // The rule was broken
-        return BigDecimal.valueOf(counter - distinctProductRestriction)
-                .multiply(BigDecimal.valueOf(penaltyFactor));
+        return penalty;
     }
 }

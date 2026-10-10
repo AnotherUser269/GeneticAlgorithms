@@ -8,42 +8,43 @@ import java.util.ArrayList;
 
 public class App {
     // Constants
-    private static final BigDecimal WEIGHT_KG       =   new BigDecimal("87");
-    private static final BigDecimal HEIGHT_CM       =   new BigDecimal("173");
-    private static final int AGE                    =   19;
-    private static final SexType SEX                =   SexType.MALE;
-    private static final BigDecimal ACTIVITY_FACTOR =   new BigDecimal("1.5");
-    public static final String FILE_PATH            =   "input.txt";
+    private static final BigDecimal WEIGHT_KG = new BigDecimal("87");
+    private static final BigDecimal HEIGHT_CM = new BigDecimal("173");
+    private static final int AGE = 19;
+    private static final SexType SEX = SexType.MALE;
+    private static final BigDecimal ACTIVITY_FACTOR = new BigDecimal("1.5");
+    public static final String FILE_PATH = "input.txt";
 
     public static void main(String[] args) {
         // Calculating norms
-        BigDecimal ccalNorm = NormCalculator.getCaloriesNorm(WEIGHT_KG, HEIGHT_CM, AGE, SEX, ACTIVITY_FACTOR);
-        BigDecimal fatNorm = NormCalculator.getFatNorm(ccalNorm);
-        BigDecimal proteinNorm = NormCalculator.getProteinNorm(ccalNorm);
-        BigDecimal carbsNorm = NormCalculator.getCarbsNorm(ccalNorm);
+        BigDecimal kcalNorm = NormCalculator.getCaloriesNorm(WEIGHT_KG, HEIGHT_CM, AGE, SEX, ACTIVITY_FACTOR);
+        BigDecimal fatNorm = NormCalculator.getFatNorm(kcalNorm);
+        BigDecimal proteinNorm = NormCalculator.getProteinNorm(kcalNorm);
+        BigDecimal carbsNorm = NormCalculator.getCarbsNorm(kcalNorm);
 
         System.out.printf("""
-                (i) Calculated norms:
-                - Calories: %s ccal
-                - Fats: %s g
-                - Proteins: %s g
-                - Carbohydrates: %s g
-                %s%n""",
-                ccalNorm, fatNorm, proteinNorm, carbsNorm, "~".repeat(30));
+                        (i) Calculated norms:
+                        - Calories: %s kcal
+                        - Fats: %s g
+                        - Proteins: %s g
+                        - Carbohydrates: %s g
+                        %s%n""",
+                kcalNorm, fatNorm, proteinNorm, carbsNorm, "~".repeat(30));
 
         // Getting data from a file
         ArrayList<Food> food = FoodParser.getFromTxt(FILE_PATH);
 
         // Starting a genetic algorithm
         GenAlgorithm genAlgorithm = new GenAlgorithm.Builder()
-                .setPopulation(2000)
-                .setIterations(30000)
-                .setMutationRate(0.12)
-                .setProductAmountRestriction(12)    // > N products will punish the algorithm
-                .setGenValueRestriction(3)
-                .setNorms(ccalNorm, fatNorm, proteinNorm, carbsNorm)
-                .setFactors(5,5,10,5)
-                .setPenaltyFactor(10000)
+                .setPopulation(5000)
+                .setIterations(10000)
+                .setMutationRate(0.2)
+                .setMaxDistinctFoods(10)    // > N products will punish the algorithm
+                .setMinDistinctFoods(5)    // < N products will punish the algorithm
+                .setMaxPortionsPerFood(4)
+                .setNorms(kcalNorm, fatNorm, proteinNorm, carbsNorm)
+                .setFactors(2, 5, 10, 2)
+                .setPenaltyFactor(10_0000)
                 .setData(food)
                 .build();
 
@@ -58,7 +59,7 @@ public class App {
         BigDecimal currCarbs = BigDecimal.ZERO;
 
         System.out.println("(i) The algorithm decided to choose:");
-        for(int i=0; i< best.length; i++) {
+        for (int i = 0; i < best.length; i++) {
             if (best[i] != 0) {
                 counter++;
 
@@ -75,15 +76,18 @@ public class App {
                 currCarbs = currCarbs.add(curFood.carbs().multiply(BigDecimal.valueOf(curAmount)));
             }
         }
+        if (counter == 0) {
+            System.out.println("Nothing.");
+        }
         System.out.println("~".repeat(30));
 
         System.out.printf("""
-                [RESULT] The algorithm's total result:
-                - Calories: %s ccal
-                - Fats: %s g
-                - Proteins: %s g
-                - Carbohydrates: %s g
-                %n""",
+                        [RESULT] The algorithm's total result:
+                        - Calories: %s kcal
+                        - Fats: %s g
+                        - Proteins: %s g
+                        - Carbohydrates: %s g
+                        %n""",
                 currCcal, currFat, currProtein, currCarbs);
     }
 }
