@@ -7,13 +7,15 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 
 public class App {
+    private static final int GRAMS_PER_PORTION = 100;
+
     // Constants
     private static final BigDecimal WEIGHT_KG = new BigDecimal("87");
     private static final BigDecimal HEIGHT_CM = new BigDecimal("173");
     private static final int AGE = 19;
     private static final SexType SEX = SexType.MALE;
     private static final BigDecimal ACTIVITY_FACTOR = new BigDecimal("1.5");
-    public static final String FILE_PATH = "input.txt";
+    private static final String FILE_PATH = "input.txt";
 
     public static void main(String[] args) {
         // Calculating norms
@@ -32,20 +34,20 @@ public class App {
                 kcalNorm, fatNorm, proteinNorm, carbsNorm, "~".repeat(30));
 
         // Getting data from a file
-        ArrayList<Food> food = FoodParser.getFromTxt(FILE_PATH);
+        ArrayList<Food> foods = FoodParser.getFromTxt(FILE_PATH);
 
         // Starting a genetic algorithm
         GenAlgorithm genAlgorithm = new GenAlgorithm.Builder()
                 .setPopulation(5000)
                 .setIterations(10000)
                 .setMutationRate(0.2)
-                .setMaxDistinctFoods(10)    // > N products will punish the algorithm
-                .setMinDistinctFoods(5)    // < N products will punish the algorithm
+                .setMaxDistinctFoods(10)   // more than N distinct foods is penalized
+                .setMinDistinctFoods(5)    // fewer than N distinct foods is penalized
                 .setMaxPortionsPerFood(4)
                 .setNorms(kcalNorm, fatNorm, proteinNorm, carbsNorm)
                 .setFactors(2, 5, 10, 2)
-                .setPenaltyFactor(10_0000)
-                .setData(food)
+                .setPenaltyFactor(100_000)
+                .setData(foods)
                 .build();
 
         int[] best = genAlgorithm.startSimulation();
@@ -53,7 +55,7 @@ public class App {
         // Outputting the result
         int counter = 0;
 
-        BigDecimal currCcal = BigDecimal.ZERO;
+        BigDecimal currKcal = BigDecimal.ZERO;
         BigDecimal currFat = BigDecimal.ZERO;
         BigDecimal currProtein = BigDecimal.ZERO;
         BigDecimal currCarbs = BigDecimal.ZERO;
@@ -63,14 +65,14 @@ public class App {
             if (best[i] != 0) {
                 counter++;
 
-                Food curFood = food.get(i);
+                Food curFood = foods.get(i);
                 int curAmount = best[i];
 
                 System.out.printf("%d. %s - %s g%n",
-                        counter, curFood.label(), curAmount * 100
+                        counter, curFood.label(), curAmount * GRAMS_PER_PORTION
                 );
 
-                currCcal = currCcal.add(curFood.kcal().multiply(BigDecimal.valueOf(curAmount)));
+                currKcal = currKcal.add(curFood.kcal().multiply(BigDecimal.valueOf(curAmount)));
                 currFat = currFat.add(curFood.fat().multiply(BigDecimal.valueOf(curAmount)));
                 currProtein = currProtein.add(curFood.protein().multiply(BigDecimal.valueOf(curAmount)));
                 currCarbs = currCarbs.add(curFood.carbs().multiply(BigDecimal.valueOf(curAmount)));
@@ -88,6 +90,6 @@ public class App {
                         - Proteins: %s g
                         - Carbohydrates: %s g
                         %n""",
-                currCcal, currFat, currProtein, currCarbs);
+                currKcal, currFat, currProtein, currCarbs);
     }
 }
