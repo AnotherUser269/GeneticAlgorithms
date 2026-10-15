@@ -1,5 +1,7 @@
 package core;
 
+import java.util.ArrayList;
+
 /**
  * A single species: one integer amount per food in the problem's food list.
  * <p>
@@ -18,4 +20,16 @@ public class Species {
     public void setGenAt(int ind, int newVal) { chromosome[ind] = newVal; }
 
     public int[] getChromosome() { return chromosome; }
+
+    public ArrayList<Integer> getIndOfActiveGenes() {
+        ArrayList<Integer> genes = new ArrayList<>();
+
+        for (int i = 0; i < chromosome.length; i++) {
+            if (chromosome[i] != 0) {
+                genes.add(i);
+            }
+        }
+
+        return genes;
+    }
 }

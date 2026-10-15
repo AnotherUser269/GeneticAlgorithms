@@ -305,19 +305,48 @@ public class GenAlgorithm {
     }
 
     /**
-     * Mutates each child independently with probability {@link #mutationRate}.
-     * A mutation replaces one randomly chosen gene with a new value in
-     * {@code [0, maxPortionsPerFood]}.
+     * Mutates each child independently with probability {@link #mutationRate},
+     * choosing one of three operators:
+     * 10% - zero an active gene;
+     * 10% - randomize a gene to a new value;
+     * 80% - move one portion between 2 active genes.
      *
      * @param children the offspring to potentially mutate
      */
     private void mutate(ArrayList<Species> children) {
         for (Species sp : children) {
-            if (rng.nextDouble() < mutationRate) {
-                sp.setGenAt(
-                        rng.nextInt(foods.size()),
-                        rng.nextInt(maxPortionsPerFood + 1)
-                );
+            if (rng.nextDouble() >= mutationRate) continue;
+
+            ArrayList<Integer> active = sp.getIndOfActiveGenes();
+            if (active.isEmpty()) continue;
+
+            double roll = rng.nextDouble();
+
+            if (roll < 0.10) {
+                // 10% set random active gene to zero
+                int idx = active.get(rng.nextInt(active.size()));
+                sp.setGenAt(idx, 0);
+            } else if (roll < 0.20) {
+                // 10% set random gene to rng([1, maxPortionsPerFood]) value
+                int idx = rng.nextInt(foods.size());
+                sp.setGenAt(idx, rng.nextInt(maxPortionsPerFood) + 1);
+            } else {
+                // 80% balanced mutation. moves one portion from one active gene to another
+                if (active.size() < 2) continue;
+
+                // Finding a valid pair. 100 tries
+                for (int attempt = 0; attempt < 100; attempt++) {
+                    int i = active.get(rng.nextInt(active.size()));
+                    int j = active.get(rng.nextInt(active.size()));
+                    if (i == j) continue;
+
+                    if (sp.getGenAt(i) >= 1 && sp.getGenAt(j) < maxPortionsPerFood) {
+                        sp.setGenAt(i, sp.getGenAt(i) - 1);
+                        sp.setGenAt(j, sp.getGenAt(j) + 1);
+
+                        break;
+                    }
+                }
             }
         }
     }
