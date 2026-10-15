@@ -6,7 +6,7 @@ import java.util.*;
 
 public class GenAlgorithm {
     private static final int DEFAULT_ACTIVE_GENES = 10;
-    private final Random rng = new Random();
+    private final Random rng;
 
     // Algorithm settings
     private final int populationSize;
@@ -50,6 +50,8 @@ public class GenAlgorithm {
         this.carbsFactor = builder.carbsFactor;
         this.penaltyFactor = builder.penaltyFactor;
 
+        this.rng = (builder.rng == null)? new Random(): builder.rng;
+
         this.foods = builder.foods;
 
         // Performance improvement
@@ -69,6 +71,8 @@ public class GenAlgorithm {
     }
 
     public static class Builder {
+        private Random rng = null;
+
         private int populationSize = 100;
         private int iterations = 1000;
         private double mutationRate = 0.3;
@@ -86,6 +90,12 @@ public class GenAlgorithm {
         private int carbsFactor = 1;
         private int penaltyFactor = 10_000;
         private ArrayList<Food> foods;
+
+        public Builder setRandomSeed(long seed) {
+            this.rng = new Random(seed);
+
+            return this;
+        }
 
         public Builder setPopulation(int population) {
             // 0 or fewer species
