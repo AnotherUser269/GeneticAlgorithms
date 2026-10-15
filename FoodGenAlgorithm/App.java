@@ -15,7 +15,7 @@ public class App {
     private static final int AGE = 19;
     private static final SexType SEX = SexType.MALE;
     private static final BigDecimal ACTIVITY_FACTOR = new BigDecimal("1.5");
-    private static final String FILE_PATH = "input.txt";
+    private static final String FILE_PATH = "input2ru.txt";
 
     public static void main(String[] args) {
         // Calculating norms
@@ -38,15 +38,16 @@ public class App {
 
         // Starting a genetic algorithm
         GenAlgorithm genAlgorithm = new GenAlgorithm.Builder()
-                .setPopulation(5000)
+                .setPopulation(2000)
                 .setIterations(10000)
-                .setMutationRate(0.2)
+                .setMutationRate(0.7)
                 .setMaxDistinctFoods(10)   // more than N distinct foods is penalized
                 .setMinDistinctFoods(5)    // fewer than N distinct foods is penalized
                 .setMaxPortionsPerFood(4)
+                .setMigrationInterval(500)
                 .setNorms(kcalNorm, fatNorm, proteinNorm, carbsNorm)
-                .setFactors(2, 5, 10, 2)
-                .setPenaltyFactor(100_000)
+                .setFactors(2, 8, 15, 4)
+                .setPenaltyFactor(10000)
                 .setData(foods)
                 .build();
 
