@@ -17,10 +17,10 @@ git clone github.com/AnotherUser269/GeneticAlgorithms/FoodGenAlgorithm
 ```
 f(sp) = kcalFactor * (kcalNorm - kcal(sp))^2 + fatFactor * (fatNorm - fat(sp))^2 + proteinFactor * (proteinNorm - protein(sp))^2 + carbsFactor * (carbsNorm - carbs(sp))^2 + penalty(sp)
 ```
-3. Penalty is 
-4. Uniform crossover
-5. Three-way mutation
-6. Periodic migration
+3. Penalty is added if the chromosome violates the distinct-food constraints.
+4. Uniform crossover.
+5. Three-way mutation.
+6. Periodic migration.
 
 You can learn more about each step from JavaDocs.
 
