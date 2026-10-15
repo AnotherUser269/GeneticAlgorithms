@@ -232,7 +232,7 @@ public class GenAlgorithm {
      * Runs the algorithm for {@link #iterations} generations and returns the
      * chromosome of the best species found.
      * <p>
-     * A one step could be described as:
+     * One step could be described as:
      * 1. Reproduction
      * 2. Mutation
      * 3. Migration
@@ -264,7 +264,7 @@ public class GenAlgorithm {
     }
 
     /**
-     * Replaces 10% of worst species with a random ones.
+     * Replaces 10% of worst species with a random species.
      * @param population the current generation
      */
     private void migration(ArrayList<Species> population) {
@@ -286,7 +286,7 @@ public class GenAlgorithm {
 
     /**
      * Creates the initial population. Each chromosome is generated with at most
-     * {@code maxDistinctFoods} active foods to reduce
+     * {@code maxDistinctFoods} active foods.
      *
      * @return the initial population
      */
