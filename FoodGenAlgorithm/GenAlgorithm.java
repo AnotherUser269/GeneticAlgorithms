@@ -15,6 +15,7 @@ public class GenAlgorithm {
     private final int maxDistinctFoods;
     private final int minDistinctFoods;
     private final int maxPortionsPerFood;
+    private final int migrationInterval;
     private final BigDecimal kcalNorm;
     private final BigDecimal fatNorm;
     private final BigDecimal proteinNorm;
@@ -38,6 +39,7 @@ public class GenAlgorithm {
         this.maxDistinctFoods = builder.maxDistinctFoods;
         this.minDistinctFoods = builder.minDistinctFoods;
         this.maxPortionsPerFood = builder.maxPortionsPerFood;
+        this.migrationInterval = builder.migrationInterval;
         this.kcalNorm = builder.kcalNorm;
         this.fatNorm = builder.fatNorm;
         this.proteinNorm = builder.proteinNorm;
@@ -73,6 +75,7 @@ public class GenAlgorithm {
         private int maxDistinctFoods = 10;
         private int minDistinctFoods = 5;
         private int maxPortionsPerFood = 6;
+        private int migrationInterval = -1;
         private BigDecimal kcalNorm;
         private BigDecimal fatNorm;
         private BigDecimal proteinNorm;
@@ -150,6 +153,16 @@ public class GenAlgorithm {
             return this;
         }
 
+        public Builder setMigrationInterval(int amount) {
+            if (amount <= 0 && amount != -1) {
+                System.err.println("[Error] Wrong migration interval provided. Expected an integer above zero or -1. Using no migration mode.");
+                return this;
+            }
+
+            this.migrationInterval = amount;
+            return this;
+        }
+
         public Builder setNorms(BigDecimal kcal, BigDecimal fat, BigDecimal protein, BigDecimal carbs) {
             // < 0 kcal
             if (kcal.compareTo(BigDecimal.ZERO) < 0) {
@@ -212,7 +225,8 @@ public class GenAlgorithm {
      * A one step could be described as:
      * 1. Reproduction
      * 2. Mutation
-     * 3. Selection
+     * 3. Migration
+     * 4. Selection
      *
      * @return the chromosome of the best species found
      */
@@ -227,11 +241,37 @@ public class GenAlgorithm {
             this.updateFitness(children);
             population.addAll(children);
 
+            // Migration
+            if (migrationInterval != -1 && i % migrationInterval == 0 && i != 0) {
+                migration(population);
+            }
+
             // After that, we are choosing only populationSize best
             population = this.selectNBest(population, populationSize);
         }
 
         return population.getFirst().getChromosome();
+    }
+
+    /**
+     * Replaces 10% of worst species with a random ones.
+     * @param population the current generation
+     */
+    private void migration(ArrayList<Species> population) {
+        int immigrantCount = populationSize / 10;  // 10%
+        for (int j = 0; j < immigrantCount; j++) {
+            int[] chrom = new int[foods.size()];
+            int activeCount = Math.min(maxDistinctFoods, foods.size());
+
+            for (int k = 0; k < activeCount; k++) {
+                int idx = rng.nextInt(foods.size());
+                chrom[idx] = rng.nextInt(maxPortionsPerFood) + 1 ;
+            }
+
+            Species immigrant = new Species(chrom);
+            immigrant.fitness = evaluate(immigrant);
+            population.set(populationSize - 1 - j, immigrant);
+        }
     }
 
     /**
