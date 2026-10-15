@@ -284,7 +284,7 @@ public class GenAlgorithm {
 
     /**
      * Creates {@code populationSize / 2} offspring by selecting two
-     * distinct parents randomly and combining them via {@link #crossover}.
+     * distinct parents randomly and combining them via {@link #uniformCrossover}.
      *
      * @param population the current generation
      * @return the offspring
@@ -302,7 +302,7 @@ public class GenAlgorithm {
                 parentB = population.get(rng.nextInt(populationSize));
             } while (parentA == parentB);
 
-            Species child = new Species(this.crossover(parentA, parentB));
+            Species child = new Species(this.uniformCrossover(parentA, parentB));
             children.add(child);
         }
 
@@ -310,24 +310,22 @@ public class GenAlgorithm {
     }
 
     /**
-     * Produces a child chromosome by single-point crossover.
+     * Produces a child chromosome by uniform crossover.
      *
      * @param parentA the first parent
      * @param parentB the second parent
      * @return their child
      */
-    private int[] crossover(Species parentA, Species parentB) {
+    private int[] uniformCrossover(Species parentA, Species parentB) {
         if (foods.size() < 2) return new int[foods.size()];
-
-        int crossoverPoint = rng.nextInt(foods.size() - 1) + 1;  // crosspoint > 0
         int[] childChromosome = new int[foods.size()];
 
-        for (int i = 0; i <= crossoverPoint; i++) {
-            childChromosome[i] = parentA.getGenAt(i);
-        }
-
-        for (int i = crossoverPoint + 1; i < foods.size(); i++) {
-            childChromosome[i] = parentB.getGenAt(i);
+        for (int i = 0; i < foods.size(); i++) {
+            if (rng.nextBoolean()) {
+                childChromosome[i] = parentA.getGenAt(i);
+            } else {
+                childChromosome[i] = parentB.getGenAt(i);
+            }
         }
 
         return childChromosome;
