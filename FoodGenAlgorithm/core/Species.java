@@ -19,8 +19,6 @@ public class Species {
 
     public void setGenAt(int ind, int newVal) { chromosome[ind] = newVal; }
 
-    public int[] getChromosome() { return chromosome; }
-
     public ArrayList<Integer> getIndOfActiveGenes() {
         ArrayList<Integer> genes = new ArrayList<>();
 
@@ -32,4 +30,6 @@ public class Species {
 
         return genes;
     }
+
+    public int getChromosomeSize() { return this.chromosome.length; }
 }

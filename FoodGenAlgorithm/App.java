@@ -1,4 +1,5 @@
 import core.Food;
+import core.Species;
 import enums.SexType;
 import utils.FoodParser;
 import utils.NormCalculator;
@@ -51,7 +52,8 @@ public class App {
                 .setData(foods)
                 .build();
 
-        int[] best = genAlgorithm.startSimulation();
+        Species best = genAlgorithm.startSimulation();
+        int[] chrOfBest = getChromosome(best);
 
         // Outputting the result
         int counter = 0;
@@ -62,12 +64,12 @@ public class App {
         BigDecimal currCarbs = BigDecimal.ZERO;
 
         System.out.println("(i) The algorithm decided to choose:");
-        for (int i = 0; i < best.length; i++) {
-            if (best[i] != 0) {
+        for (int i = 0; i < chrOfBest.length; i++) {
+            if (chrOfBest[i] != 0) {
                 counter++;
 
                 Food curFood = foods.get(i);
-                int curAmount = best[i];
+                int curAmount = chrOfBest[i];
 
                 System.out.printf("%d. %s - %s g%n",
                         counter, curFood.label(), curAmount * GRAMS_PER_PORTION
@@ -92,5 +94,16 @@ public class App {
                         - Carbohydrates: %s g
                         %n""",
                 currKcal, currFat, currProtein, currCarbs);
+    }
+
+    private static int[] getChromosome(Species sp) {
+        int length = sp.getChromosomeSize();
+        int[] chr = new int[length];
+
+        for (int i = 0; i < length; i++) {
+            chr[i] = sp.getGenAt(i);
+        }
+
+        return chr;
     }
 }

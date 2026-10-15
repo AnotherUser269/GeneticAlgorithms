@@ -230,7 +230,7 @@ public class GenAlgorithm {
      *
      * @return the chromosome of the best species found
      */
-    public int[] startSimulation() {
+    public Species startSimulation() {
         ArrayList<Species> population = this.initializePopulation();
 
         for (int i = 0; i < iterations; i++) {
@@ -250,7 +250,7 @@ public class GenAlgorithm {
             population = this.selectNBest(population, populationSize);
         }
 
-        return population.getFirst().getChromosome();
+        return population.getFirst();
     }
 
     /**
@@ -442,11 +442,10 @@ public class GenAlgorithm {
         double protein = 0.0;
         double carbs = 0.0;
 
-        int[] chromosome = sp.getChromosome();
+        ArrayList<Integer> activeGenesIdx = sp.getIndOfActiveGenes();
 
-        for (int i = 0; i < foods.size(); i++) {
-            int amount = chromosome[i];
-            if (amount == 0) continue;
+        for (int i : activeGenesIdx) {
+            int amount = sp.getGenAt(i);
 
             kcal    += this.foodKcal[i]    * amount;
             fat     += this.foodFat[i]     * amount;
@@ -455,7 +454,7 @@ public class GenAlgorithm {
         }
 
         // Calculating the fitness
-        double penalty = getPenalty(chromosome);
+        double penalty = getPenalty(activeGenesIdx);
 
         double dKcal = Math.pow(kcalNorm.doubleValue() - kcal, 2);
         double dFat = Math.pow(fatNorm.doubleValue() - fat, 2);
@@ -472,16 +471,14 @@ public class GenAlgorithm {
      * Returns zero if the count is within bounds, or if both constraints are
      * disabled ({@code -1}).
      *
-     * @param chromosome the chromosome to inspect
+     * @param activeGenes the genes to inspect
      * @return the total penalty value
      */
-    private double getPenalty(int[] chromosome) {
+    private double getPenalty(ArrayList<Integer> activeGenes) {
         if (maxDistinctFoods == -1 && minDistinctFoods == -1) return 0;
 
-        int distinctCount = 0;
-        for (int gen : chromosome) if (gen != 0) distinctCount++;
-
         double penalty = 0;
+        int distinctCount = activeGenes.size();
 
         if (maxDistinctFoods != -1 && distinctCount > maxDistinctFoods) {
             penalty += (distinctCount - maxDistinctFoods) * penaltyFactor;
@@ -489,6 +486,7 @@ public class GenAlgorithm {
         if (minDistinctFoods != -1 && distinctCount < minDistinctFoods) {
             penalty += (minDistinctFoods - distinctCount) * penaltyFactor;
         }
+
         return penalty;
     }
 }
