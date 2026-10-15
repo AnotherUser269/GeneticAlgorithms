@@ -16,7 +16,7 @@ public class App {
     private static final int AGE = 19;
     private static final SexType SEX = SexType.MALE;
     private static final BigDecimal ACTIVITY_FACTOR = new BigDecimal("1.5");
-    private static final String FILE_PATH = "input2ru.txt";
+    private static final String FILE_PATH = "src/input2ru.txt";
 
     public static void main(String[] args) {
         // Calculating norms
