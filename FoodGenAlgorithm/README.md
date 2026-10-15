@@ -3,18 +3,18 @@
 Finds a daily diet matching given calorie/fat/protein/carb norms, using a genetic algorithm over a list of foods.
 
 ## How to run
-1. Download the project
+1. Clone the repository:
+```Bash
+git clone github.com/AnotherUser269/GeneticAlgorithms/
 ```
-git clone github.com/AnotherUser269/GeneticAlgorithms/FoodGenAlgorithm
-```
-2. Open App.java in your IDE and change constants (weight, height, name of the input file, etc).
+2. Open GeneticAlgorithm/FoodGenAlgorithm/App.java in your IDE and change constants (weight, height, name of the input file, etc).
 3. Setup your algorithm, if you want
 4. Run the App.java
 
 ## How it works
 1. Each gene in a chromosome represents a number of 100g portions of foods[i]. 0 means, that algorithm decided not to take this food.
 2. Fitness is evaluated with the next formula:
-```
+```Formula
 f(sp) = kcalFactor * (kcalNorm - kcal(sp))^2 + fatFactor * (fatNorm - fat(sp))^2 + proteinFactor * (proteinNorm - protein(sp))^2 + carbsFactor * (carbsNorm - carbs(sp))^2 + penalty(sp)
 ```
 3. Penalty is added if the chromosome violates the distinct-food constraints.
@@ -27,7 +27,7 @@ You can learn more about each step from JavaDocs.
 ## Example
 For the next configuration:
 
-```
+```Config example
 GenAlgorithm genAlgorithm = new GenAlgorithm.Builder()
                 .setRandomSeed(12345)
                 .setPopulation(1000)
@@ -46,7 +46,7 @@ GenAlgorithm genAlgorithm = new GenAlgorithm.Builder()
 
 The output:
 
-```
+```Output
 (i) Calculated norms:
 - Calories: 2791.875 kcal
 - Fats: 93.06 g
